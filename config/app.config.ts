@@ -10,22 +10,23 @@ export const TAGLINE = "Your 3D AI Companion";
 export const DESCRIPTION =
   "Meet a 3D AI companion that can listen, talk, respond and react emotionally. Built with Flutter. Powered by Gemini + Groq AI.";
 
-export const APK_URL = ""; // Set when available — empty = "Coming Soon"
+export const APK_URL =
+  "https://github.com/akhilboss118-an/spidey-companion/releases/download/v1.0.0/SpideyCompanion-v1.0.0.apk";
 export const PLAY_STORE_URL = ""; // Set when available — empty = "Coming Soon"
 
 export const VERSION = "1.0.0";
-export const APK_SIZE = "Coming Soon";
+export const APK_SIZE = "82.6 MB";
 export const MIN_ANDROID = "Android 7.0+";
 export const PLATFORM = "Android";
 
 export const SOCIAL_LINKS = {
-  instagram: "", // e.g. "https://instagram.com/yourhandle"
-  youtube: "https://youtube.com/@yourchannel",
-  github: "",    // e.g. "https://github.com/yourrepo"
+  instagram: "https://www.instagram.com/boss_pvtttt_8155?igsi=MXJpZmVnMXgzNms0bw==",
+  youtube: "https://youtube.com/@bossakhil-v9v?si=p1aK3HIYVy0vQm8w",
+  github: "https://github.com/akhilboss118-an",
 };
 
 export const VIDEO_URLS = {
-  demo: "https://www.youtube.com/embed/_o-jELP_fbw", // Day 5 making him feel alive demo
+  demo: "https://www.youtube.com/embed/_o-jELP_fbw", // Day 5 emotions devlog
 };
 
 export const APP_SCREENSHOTS: string[] = [
@@ -118,11 +119,11 @@ export const FAQ_ITEMS = [
   {
     question: "Can I download it on Android?",
     answer:
-      "Yes! The app is being prepared for Android. You'll be able to download the APK directly or get it from the Google Play Store.",
+      "Yes! The app APK is available now to download directly. Google Play Store version will be available soon.",
   },
   {
     question: "Is it free?",
     answer:
-      "Spidey Companion is designed to be accessible. Pricing details will be announced when the app launches publicly.",
+      "Spidey Companion is completely free to download and try on Android.",
   },
 ];
