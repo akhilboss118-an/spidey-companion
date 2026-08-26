@@ -11,11 +11,11 @@ export const DESCRIPTION =
   "Meet a 3D AI companion that can listen, talk, respond and react emotionally. Built with Flutter. Powered by Gemini + Groq AI.";
 
 export const APK_URL =
-  "https://github.com/akhilboss118-an/spidey-companion/releases/download/v1.1.0/SpideyCompanion-v1.1.0.apk";
+  "https://github.com/akhilboss118-an/spidey-companion/releases/download/v1.2.0/SpideyCompanion-v1.2.0.apk";
 export const PLAY_STORE_URL = ""; // Set when available — empty = "Coming Soon"
 
-export const VERSION = "1.1.0";
-export const APK_SIZE = "83.2 MB";
+export const VERSION = "1.2.0";
+export const APK_SIZE = "83.5 MB";
 export const MIN_ANDROID = "Android 7.0+";
 export const PLATFORM = "Android";
 
