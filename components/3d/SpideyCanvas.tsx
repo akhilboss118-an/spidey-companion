@@ -32,7 +32,6 @@ const EMOTION_CONFIGS: Record<
     emissiveIntensity: number;
     glowColor: number;
     glowIntensity: number;
-    loop: boolean;
     scaleMultiplier: number;
   }
 > = {
@@ -42,7 +41,6 @@ const EMOTION_CONFIGS: Record<
     emissiveIntensity: 0.2,
     glowColor: 0xe31c25,
     glowIntensity: 1.0,
-    loop: true,
     scaleMultiplier: 1.0,
   },
   happy: {
@@ -51,7 +49,6 @@ const EMOTION_CONFIGS: Record<
     emissiveIntensity: 0.8,
     glowColor: 0xff4422,
     glowIntensity: 2.2,
-    loop: true,
     scaleMultiplier: 1.0,
   },
   surprised: {
@@ -60,7 +57,6 @@ const EMOTION_CONFIGS: Record<
     emissiveIntensity: 0.7,
     glowColor: 0xffaa00,
     glowIntensity: 2.0,
-    loop: true,
     scaleMultiplier: 1.0,
   },
   excited: {
@@ -69,7 +65,6 @@ const EMOTION_CONFIGS: Record<
     emissiveIntensity: 1.2,
     glowColor: 0xff0055,
     glowIntensity: 3.0,
-    loop: true,
     scaleMultiplier: 1.0,
   },
   flip: {
@@ -78,7 +73,6 @@ const EMOTION_CONFIGS: Record<
     emissiveIntensity: 1.0,
     glowColor: 0x00e5ff,
     glowIntensity: 2.8,
-    loop: true,
     scaleMultiplier: 1.0,
   },
   clap: {
@@ -87,7 +81,6 @@ const EMOTION_CONFIGS: Record<
     emissiveIntensity: 0.9,
     glowColor: 0x00e676,
     glowIntensity: 2.4,
-    loop: true,
     scaleMultiplier: 1.0,
   },
   sad: {
@@ -96,7 +89,6 @@ const EMOTION_CONFIGS: Record<
     emissiveIntensity: 0.4,
     glowColor: 0x3b82f6,
     glowIntensity: 1.2,
-    loop: true,
     scaleMultiplier: 1.0,
   },
 };
@@ -135,12 +127,33 @@ const SpideyCanvas = forwardRef<SpideyCanvasRef, SpideyCanvasProps>(
       // ── Scene Setup ──────────────────────────────────────────
       const scene = new THREE.Scene();
 
-      const width = container.clientWidth || 400;
-      const heightVal = container.clientHeight || 500;
+      const width = container.clientWidth || 360;
+      const heightVal = container.clientHeight || 460;
+      const initialAspect = width / heightVal;
 
-      const camera = new THREE.PerspectiveCamera(38, width / heightVal, 0.1, 100);
-      camera.position.set(0, 0.95, 3.2);
-      camera.lookAt(0, 0.85, 0);
+      // Adaptive camera framing for mobile screens
+      const baseFov = initialAspect < 0.8 ? 44 : initialAspect < 1.1 ? 40 : 36;
+      const camera = new THREE.PerspectiveCamera(baseFov, initialAspect, 0.1, 100);
+      
+      const updateCameraPosition = (aspect: number) => {
+        if (aspect < 0.7) {
+          // Narrow mobile screens (e.g. 360x640)
+          camera.fov = 46;
+          camera.position.set(0, 0.9, 3.8);
+        } else if (aspect < 1.0) {
+          // Standard mobile portrait
+          camera.fov = 42;
+          camera.position.set(0, 0.92, 3.4);
+        } else {
+          // Desktop / Tablets / Landscape
+          camera.fov = 36;
+          camera.position.set(0, 0.95, 3.1);
+        }
+        camera.lookAt(0, 0.85, 0);
+        camera.updateProjectionMatrix();
+      };
+
+      updateCameraPosition(initialAspect);
 
       const renderer = new THREE.WebGLRenderer({
         antialias: true,
@@ -152,28 +165,25 @@ const SpideyCanvas = forwardRef<SpideyCanvasRef, SpideyCanvasProps>(
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.35;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.domElement.style.touchAction = "pan-y"; // Prevent blocking vertical scrolling on mobile
       container.appendChild(renderer.domElement);
 
       // ── Lighting ─────────────────────────────────────────────
       const ambientLight = new THREE.AmbientLight(0xffffff, 1.8);
       scene.add(ambientLight);
 
-      // Key light from top-right
       const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
       keyLight.position.set(3, 4, 3);
       scene.add(keyLight);
 
-      // Spider red rim light from left-rear
       const redRimLight = new THREE.DirectionalLight(0xe31c25, 3.0);
       redRimLight.position.set(-3, 2, -2);
       scene.add(redRimLight);
 
-      // Stark cyan tech fill from bottom-right
       const cyanFillLight = new THREE.DirectionalLight(0x38bdf8, 1.2);
       cyanFillLight.position.set(2, -2, 2);
       scene.add(cyanFillLight);
 
-      // Dynamic chest/eye reactor point light
       const glowLight = new THREE.PointLight(0xe31c25, 1.2, 6);
       glowLight.position.set(0, 1.0, 1.4);
       scene.add(glowLight);
@@ -222,22 +232,18 @@ const SpideyCanvas = forwardRef<SpideyCanvasRef, SpideyCanvasProps>(
 
           const model = gltf.scene;
 
-          // Normalize bounding box & position
           const box = new THREE.Box3().setFromObject(model);
           const size = box.getSize(new THREE.Vector3());
           const center = box.getCenter(new THREE.Vector3());
 
-          // Scale to consistent 1.9m height
           const targetHeight = 1.9;
           const scale = targetHeight / (size.y || 1.8);
           model.scale.set(scale, scale, scale);
 
-          // Center horizontally and align feet with base
           model.position.x = -center.x * scale;
           model.position.z = -center.z * scale;
           model.position.y = -box.min.y * scale;
 
-          // Enable shadows and enhance materials
           model.traverse((child) => {
             if ((child as THREE.Mesh).isMesh) {
               const mesh = child as THREE.Mesh;
@@ -251,7 +257,6 @@ const SpideyCanvas = forwardRef<SpideyCanvasRef, SpideyCanvasProps>(
             }
           });
 
-          // Animation Mixer setup
           const mixer = new THREE.AnimationMixer(model);
           const actions: THREE.AnimationAction[] = [];
 
@@ -278,39 +283,65 @@ const SpideyCanvas = forwardRef<SpideyCanvasRef, SpideyCanvasProps>(
         }
       };
 
-      // Connect switch function to ref
       switchModelFnRef.current = (emotion: EmotionType) => {
         loadModelForEmotion(emotion);
       };
 
-      // Initial load
       loadModelForEmotion(emotionRef.current);
 
-      // Preload other models in background
+      // Preload other emotions in background
       Object.keys(EMOTION_CONFIGS).forEach((key) => {
         if (key !== emotionRef.current) {
           setTimeout(() => {
             if (isMounted) loadModelForEmotion(key as EmotionType);
-          }, 400);
+          }, 350);
         }
       });
 
-      // ── Mouse / Touch Tracking ───────────────────────────────
+      // ── Mouse & Touch Gesture Tracking ──────────────────────
       const targetRotYRef = { current: 0 };
       const targetRotXRef = { current: 0 };
-      const isTouch = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let isTouching = false;
 
       const handleMouseMove = (e: MouseEvent) => {
-        if (!enableMouseTracking || isTouch) return;
+        if (!enableMouseTracking) return;
         const rect = container.getBoundingClientRect();
         const nx = (e.clientX - rect.left) / rect.width - 0.5;
         const ny = (e.clientY - rect.top) / rect.height - 0.5;
-        targetRotYRef.current = nx * 0.5; // rotate horizontally
-        targetRotXRef.current = ny * 0.15; // tilt vertically
+        targetRotYRef.current = nx * 0.5;
+        targetRotXRef.current = ny * 0.15;
       };
 
-      if (enableMouseTracking && !isTouch) {
+      const handleTouchStart = (e: TouchEvent) => {
+        if (e.touches.length === 1) {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          isTouching = true;
+        }
+      };
+
+      const handleTouchMove = (e: TouchEvent) => {
+        if (!isTouching || e.touches.length !== 1) return;
+        const deltaX = e.touches[0].clientX - touchStartX;
+        const deltaY = e.touches[0].clientY - touchStartY;
+        // Soft horizontal rotate on touch drag
+        targetRotYRef.current += (deltaX / 300) * 0.05;
+        targetRotXRef.current = Math.max(-0.2, Math.min(0.2, targetRotXRef.current + (deltaY / 300) * 0.02));
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      };
+
+      const handleTouchEnd = () => {
+        isTouching = false;
+      };
+
+      if (enableMouseTracking) {
         window.addEventListener("mousemove", handleMouseMove, { passive: true });
+        container.addEventListener("touchstart", handleTouchStart, { passive: true });
+        window.addEventListener("touchmove", handleTouchMove, { passive: true });
+        window.addEventListener("touchend", handleTouchEnd, { passive: true });
       }
 
       // ── Animation Render Loop ────────────────────────────────
@@ -325,21 +356,18 @@ const SpideyCanvas = forwardRef<SpideyCanvasRef, SpideyCanvasProps>(
         const t = clock.getElapsedTime();
         const config = emotionTargetRef.current;
 
-        // Update active animation mixer
         if (currentActiveMixer) {
           currentActiveMixer.update(delta);
         }
 
-        // Smooth mouse rotation lerp
+        // Smooth rotation damping
         currentRotY += (targetRotYRef.current - currentRotY) * 0.08;
         currentRotX += (targetRotXRef.current - currentRotX) * 0.08;
 
-        // Subtle organic sway
         const sway = Math.sin(t * 1.2) * 0.015;
         characterRoot.rotation.y = currentRotY + sway;
         characterRoot.rotation.x = currentRotX;
 
-        // Dynamic reactor glow transition
         if (glowLight) {
           glowLight.color.lerp(new THREE.Color(config.glowColor), 0.08);
           glowLight.intensity += (config.glowIntensity - glowLight.intensity) * 0.08;
@@ -356,8 +384,9 @@ const SpideyCanvas = forwardRef<SpideyCanvasRef, SpideyCanvasProps>(
           const w = entry.contentRect.width || container.clientWidth;
           const h = entry.contentRect.height || container.clientHeight;
           if (w > 0 && h > 0) {
-            camera.aspect = w / h;
-            camera.updateProjectionMatrix();
+            const aspect = w / h;
+            camera.aspect = aspect;
+            updateCameraPosition(aspect);
             renderer.setSize(w, h);
           }
         }
@@ -368,6 +397,9 @@ const SpideyCanvas = forwardRef<SpideyCanvasRef, SpideyCanvasProps>(
         isMounted = false;
         cancelAnimationFrame(rafId);
         window.removeEventListener("mousemove", handleMouseMove);
+        container.removeEventListener("touchstart", handleTouchStart);
+        window.removeEventListener("touchmove", handleTouchMove);
+        window.removeEventListener("touchend", handleTouchEnd);
         resizeObserver.disconnect();
         renderer.dispose();
         if (container.contains(renderer.domElement)) {
@@ -379,8 +411,8 @@ const SpideyCanvas = forwardRef<SpideyCanvasRef, SpideyCanvasProps>(
     return (
       <div
         ref={containerRef}
-        className={`w-full relative ${className}`}
-        style={{ height, minHeight: "380px" }}
+        className={`w-full relative touch-pan-y ${className}`}
+        style={{ height, minHeight: "320px" }}
         data-cursor="interactive"
       />
     );

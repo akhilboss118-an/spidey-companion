@@ -103,12 +103,12 @@ export default function AppPreview() {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-end justify-center gap-6 sm:gap-4">
+        <div className="flex flex-col md:flex-row items-center md:items-end justify-center gap-8 md:gap-6">
           {PHONE_SCREENS.map((screen, i) => (
             <div
               key={screen.title}
-              className={`phone-mock flex-shrink-0 ${
-                i === 1 ? "sm:-mt-8 scale-105 z-10" : "opacity-90"
+              className={`phone-mock flex-shrink-0 flex flex-col items-center ${
+                i === 1 ? "md:-mt-8 md:scale-105 z-10" : "opacity-95"
               }`}
             >
               {/* Phone frame */}

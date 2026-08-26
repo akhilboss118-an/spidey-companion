@@ -135,13 +135,13 @@ export default function EmotionDemo({ canvasHeight = "520px", showCanvas = true 
         <p className="text-[#A0A0B0] text-sm mt-1 max-w-md mx-auto">{current.description}</p>
       </div>
 
-      {/* Emotion interactive action buttons */}
-      <div className="flex flex-wrap justify-center gap-3 max-w-lg">
+      {/* Emotion interactive action buttons (Responsive mobile touch grid) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap justify-center gap-2 sm:gap-3 w-full max-w-lg px-2">
         {EMOTIONS.map((emotion) => (
           <button
             key={emotion.id}
             onClick={() => handleEmotion(emotion.id)}
-            className={`px-5 py-2.5 rounded-full text-sm font-semibold tracking-wide transition-all duration-200 cursor-pointer ${
+            className={`flex items-center justify-center gap-1.5 px-4 py-2.5 sm:px-5 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-200 cursor-pointer active:scale-95 ${
               activeEmotion === emotion.id
                 ? "text-white scale-105 shadow-lg"
                 : "text-[#A0A0B0] hover:text-white hover:scale-105"
@@ -154,11 +154,12 @@ export default function EmotionDemo({ canvasHeight = "520px", showCanvas = true 
               border: `1px solid ${activeEmotion === emotion.id ? emotion.color : "rgba(255,255,255,0.12)"}`,
               boxShadow:
                 activeEmotion === emotion.id
-                  ? `0 0 24px ${emotion.color}55`
+                  ? `0 0 20px ${emotion.color}55`
                   : "none",
             }}
           >
-            {emotion.emoji} {emotion.label}
+            <span>{emotion.emoji}</span>
+            <span>{emotion.label}</span>
           </button>
         ))}
       </div>
