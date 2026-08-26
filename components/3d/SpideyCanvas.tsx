@@ -2,9 +2,16 @@
 
 import { useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import * as THREE from "three";
-import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-export type EmotionType = "neutral" | "happy" | "surprised" | "excited";
+export type EmotionType =
+  | "neutral"
+  | "happy"
+  | "surprised"
+  | "excited"
+  | "flip"
+  | "clap"
+  | "sad";
 
 export interface SpideyCanvasRef {
   setEmotion: (emotion: EmotionType) => void;
@@ -14,81 +21,107 @@ interface SpideyCanvasProps {
   className?: string;
   enableMouseTracking?: boolean;
   height?: string;
+  initialEmotion?: EmotionType;
 }
 
 const EMOTION_CONFIGS: Record<
   EmotionType,
   {
+    modelPath: string;
     emissiveColor: number;
     emissiveIntensity: number;
     glowColor: number;
     glowIntensity: number;
-    bounceSpeed: number;
-    bounceHeight: number;
+    loop: boolean;
     scaleMultiplier: number;
   }
 > = {
   neutral: {
+    modelPath: "/models/standing_idle.glb",
     emissiveColor: 0x220000,
     emissiveIntensity: 0.2,
     glowColor: 0xe31c25,
     glowIntensity: 1.0,
-    bounceSpeed: 1.2,
-    bounceHeight: 0.04,
+    loop: true,
     scaleMultiplier: 1.0,
   },
   happy: {
+    modelPath: "/models/waving_gesture.glb",
     emissiveColor: 0xff3300,
     emissiveIntensity: 0.8,
     glowColor: 0xff4422,
-    glowIntensity: 2.5,
-    bounceSpeed: 2.4,
-    bounceHeight: 0.09,
-    scaleMultiplier: 1.04,
+    glowIntensity: 2.2,
+    loop: true,
+    scaleMultiplier: 1.0,
   },
   surprised: {
+    modelPath: "/models/thinking.glb",
     emissiveColor: 0xff8800,
     emissiveIntensity: 0.7,
     glowColor: 0xffaa00,
-    glowIntensity: 2.2,
-    bounceSpeed: 1.8,
-    bounceHeight: 0.07,
-    scaleMultiplier: 1.08,
+    glowIntensity: 2.0,
+    loop: true,
+    scaleMultiplier: 1.0,
   },
   excited: {
-    emissiveColor: 0xff0033,
+    modelPath: "/models/wave_dance.glb",
+    emissiveColor: 0xff0044,
     emissiveIntensity: 1.2,
-    glowColor: 0xff0044,
-    glowIntensity: 3.5,
-    bounceSpeed: 3.5,
-    bounceHeight: 0.12,
-    scaleMultiplier: 1.06,
+    glowColor: 0xff0055,
+    glowIntensity: 3.0,
+    loop: true,
+    scaleMultiplier: 1.0,
+  },
+  flip: {
+    modelPath: "/models/front_flip.glb",
+    emissiveColor: 0x0088ff,
+    emissiveIntensity: 1.0,
+    glowColor: 0x00e5ff,
+    glowIntensity: 2.8,
+    loop: true,
+    scaleMultiplier: 1.0,
+  },
+  clap: {
+    modelPath: "/models/clapping.glb",
+    emissiveColor: 0x00cc66,
+    emissiveIntensity: 0.9,
+    glowColor: 0x00e676,
+    glowIntensity: 2.4,
+    loop: true,
+    scaleMultiplier: 1.0,
+  },
+  sad: {
+    modelPath: "/models/sad_idle.glb",
+    emissiveColor: 0x112244,
+    emissiveIntensity: 0.4,
+    glowColor: 0x3b82f6,
+    glowIntensity: 1.2,
+    loop: true,
+    scaleMultiplier: 1.0,
   },
 };
 
 const SpideyCanvas = forwardRef<SpideyCanvasRef, SpideyCanvasProps>(
-  ({ className = "", enableMouseTracking = true, height = "100%" }, ref) => {
+  (
+    {
+      className = "",
+      enableMouseTracking = true,
+      height = "100%",
+      initialEmotion = "neutral",
+    },
+    ref
+  ) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const emotionRef = useRef<EmotionType>("neutral");
-    const emotionTargetRef = useRef(EMOTION_CONFIGS.neutral);
-    const modelGroupRef = useRef<THREE.Group | null>(null);
-    const materialsRef = useRef<THREE.MeshStandardMaterial[]>([]);
-    const glowLightRef = useRef<THREE.PointLight | null>(null);
-    const targetRotXRef = useRef(0);
-    const targetRotYRef = useRef(0);
-    const spinAnimRef = useRef(0);
+    const emotionRef = useRef<EmotionType>(initialEmotion);
+    const emotionTargetRef = useRef(EMOTION_CONFIGS[initialEmotion]);
+    const switchModelFnRef = useRef<((emotion: EmotionType) => void) | null>(null);
 
     useImperativeHandle(ref, () => ({
       setEmotion: (emotion: EmotionType) => {
         emotionRef.current = emotion;
-        emotionTargetRef.current = EMOTION_CONFIGS[emotion];
-        // Trigger a quick joyful reaction tilt on emotion click
-        if (emotion === "excited") {
-          spinAnimRef.current = Math.PI * 2; // full 360 spin
-        } else if (emotion === "surprised") {
-          spinAnimRef.current = -0.3;
-        } else if (emotion === "happy") {
-          spinAnimRef.current = 0.3;
+        emotionTargetRef.current = EMOTION_CONFIGS[emotion] || EMOTION_CONFIGS.neutral;
+        if (switchModelFnRef.current) {
+          switchModelFnRef.current(emotion);
         }
       },
     }));
@@ -97,15 +130,17 @@ const SpideyCanvas = forwardRef<SpideyCanvasRef, SpideyCanvasProps>(
       const container = containerRef.current;
       if (!container) return;
 
+      let isMounted = true;
+
       // ── Scene Setup ──────────────────────────────────────────
       const scene = new THREE.Scene();
 
       const width = container.clientWidth || 400;
       const heightVal = container.clientHeight || 500;
 
-      const camera = new THREE.PerspectiveCamera(40, width / heightVal, 0.1, 100);
-      camera.position.set(0, 0.05, 3.1);
-      camera.lookAt(0, 0, 0);
+      const camera = new THREE.PerspectiveCamera(38, width / heightVal, 0.1, 100);
+      camera.position.set(0, 0.95, 3.2);
+      camera.lookAt(0, 0.85, 0);
 
       const renderer = new THREE.WebGLRenderer({
         antialias: true,
@@ -115,120 +150,154 @@ const SpideyCanvas = forwardRef<SpideyCanvasRef, SpideyCanvasProps>(
       renderer.setSize(width, heightVal);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.25;
+      renderer.toneMappingExposure = 1.35;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
       container.appendChild(renderer.domElement);
 
       // ── Lighting ─────────────────────────────────────────────
-      const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+      const ambientLight = new THREE.AmbientLight(0xffffff, 1.8);
       scene.add(ambientLight);
 
       // Key light from top-right
-      const keyLight = new THREE.DirectionalLight(0xffffff, 2.8);
+      const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
       keyLight.position.set(3, 4, 3);
       scene.add(keyLight);
 
       // Spider red rim light from left-rear
-      const redRimLight = new THREE.DirectionalLight(0xe31c25, 2.8);
+      const redRimLight = new THREE.DirectionalLight(0xe31c25, 3.0);
       redRimLight.position.set(-3, 2, -2);
       scene.add(redRimLight);
 
       // Stark cyan tech fill from bottom-right
-      const cyanFillLight = new THREE.DirectionalLight(0x38bdf8, 1.0);
+      const cyanFillLight = new THREE.DirectionalLight(0x38bdf8, 1.2);
       cyanFillLight.position.set(2, -2, 2);
       scene.add(cyanFillLight);
 
       // Dynamic chest/eye reactor point light
-      const glowLight = new THREE.PointLight(0xe31c25, 1.0, 5);
-      glowLight.position.set(0, 0.2, 1.2);
+      const glowLight = new THREE.PointLight(0xe31c25, 1.2, 6);
+      glowLight.position.set(0, 1.0, 1.4);
       scene.add(glowLight);
-      glowLightRef.current = glowLight;
 
-      // ── Model Group ──────────────────────────────────────────
-      const modelGroup = new THREE.Group();
-      scene.add(modelGroup);
-      modelGroupRef.current = modelGroup;
+      // ── Character Root Group ─────────────────────────────────
+      const characterRoot = new THREE.Group();
+      scene.add(characterRoot);
 
-      // ── Load Textures & OBJ ───────────────────────────────────
-      const textureLoader = new THREE.TextureLoader();
+      // Cache for loaded GLTF scenes and mixers
+      const gltfLoader = new GLTFLoader();
+      const modelCache: Record<
+        string,
+        {
+          scene: THREE.Group;
+          mixer: THREE.AnimationMixer;
+          actions: THREE.AnimationAction[];
+        }
+      > = {};
 
-      const loadTexturesAndModel = async () => {
-        try {
-          const diffuseMap = await textureLoader.loadAsync("/models/spiderman/Body_D.png");
-          diffuseMap.colorSpace = THREE.SRGBColorSpace;
+      let currentActiveModel: THREE.Group | null = null;
+      let currentActiveMixer: THREE.AnimationMixer | null = null;
 
-          let normalMap: THREE.Texture | null = null;
-          try {
-            normalMap = await textureLoader.loadAsync("/models/spiderman/Body_N.png");
-          } catch (e) {
-            console.warn("Normal map load skipped", e);
+      const loadModelForEmotion = async (emotion: EmotionType) => {
+        const config = EMOTION_CONFIGS[emotion] || EMOTION_CONFIGS.neutral;
+        const path = config.modelPath;
+
+        if (modelCache[path]) {
+          const cached = modelCache[path];
+          if (currentActiveModel && currentActiveModel !== cached.scene) {
+            characterRoot.remove(currentActiveModel);
           }
-
-          let emissiveMap: THREE.Texture | null = null;
-          try {
-            emissiveMap = await textureLoader.loadAsync("/models/spiderman/Body_E.png");
-          } catch (e) {
-            console.warn("Emissive map load skipped", e);
-          }
-
-          const spiderMaterial = new THREE.MeshStandardMaterial({
-            map: diffuseMap,
-            normalMap: normalMap,
-            emissiveMap: emissiveMap,
-            emissive: new THREE.Color(EMOTION_CONFIGS.neutral.emissiveColor),
-            emissiveIntensity: EMOTION_CONFIGS.neutral.emissiveIntensity,
-            roughness: 0.38,
-            metalness: 0.45,
+          characterRoot.add(cached.scene);
+          currentActiveModel = cached.scene;
+          currentActiveMixer = cached.mixer;
+          cached.actions.forEach((act) => {
+            act.reset();
+            act.setEffectiveWeight(1.0);
+            act.play();
           });
+          return;
+        }
 
-          materialsRef.current = [spiderMaterial];
+        try {
+          const gltf = await gltfLoader.loadAsync(path);
+          if (!isMounted) return;
 
-          const objLoader = new OBJLoader();
-          const obj = await objLoader.loadAsync("/models/spiderman/spider.obj");
+          const model = gltf.scene;
 
-          // Calculate bounding box and center model precisely
-          const box = new THREE.Box3().setFromObject(obj);
-          const center = box.getCenter(new THREE.Vector3());
+          // Normalize bounding box & position
+          const box = new THREE.Box3().setFromObject(model);
           const size = box.getSize(new THREE.Vector3());
+          const center = box.getCenter(new THREE.Vector3());
 
-          // Center mesh around origin
-          obj.position.set(-center.x, -center.y, -center.z);
+          // Scale to consistent 1.9m height
+          const targetHeight = 1.9;
+          const scale = targetHeight / (size.y || 1.8);
+          model.scale.set(scale, scale, scale);
 
-          // Apply standard material
-          obj.traverse((child) => {
+          // Center horizontally and align feet with base
+          model.position.x = -center.x * scale;
+          model.position.z = -center.z * scale;
+          model.position.y = -box.min.y * scale;
+
+          // Enable shadows and enhance materials
+          model.traverse((child) => {
             if ((child as THREE.Mesh).isMesh) {
               const mesh = child as THREE.Mesh;
-              mesh.material = spiderMaterial;
               mesh.castShadow = true;
               mesh.receiveShadow = true;
+              if (mesh.material) {
+                const mat = mesh.material as THREE.MeshStandardMaterial;
+                mat.roughness = Math.min(mat.roughness || 0.4, 0.45);
+                mat.metalness = 0.25;
+              }
             }
           });
 
-          // Scale to fit viewport perfectly (height = 1.95)
-          const targetHeight = 1.95;
-          const scale = targetHeight / (size.y || 1.77);
-          modelGroup.scale.set(scale, scale, scale);
-          modelGroup.position.set(0, -0.05, 0);
+          // Animation Mixer setup
+          const mixer = new THREE.AnimationMixer(model);
+          const actions: THREE.AnimationAction[] = [];
 
-          modelGroup.add(obj);
+          if (gltf.animations && gltf.animations.length > 0) {
+            gltf.animations.forEach((clip) => {
+              const action = mixer.clipAction(clip);
+              action.play();
+              actions.push(action);
+            });
+          }
+
+          modelCache[path] = { scene: model, mixer, actions };
+
+          if (emotionRef.current === emotion) {
+            if (currentActiveModel && currentActiveModel !== model) {
+              characterRoot.remove(currentActiveModel);
+            }
+            characterRoot.add(model);
+            currentActiveModel = model;
+            currentActiveMixer = mixer;
+          }
         } catch (err) {
-          console.error("Spider-Man OBJ loading error:", err);
-          // Fallback sleek stylized red Spider orb
-          const geo = new THREE.SphereGeometry(0.8, 32, 32);
-          const mat = new THREE.MeshStandardMaterial({
-            color: 0xe31c25,
-            roughness: 0.3,
-            metalness: 0.6,
-            emissive: 0x330000,
-            emissiveIntensity: 0.5,
-          });
-          const mesh = new THREE.Mesh(geo, mat);
-          modelGroup.add(mesh);
+          console.error("Failed to load 3D GLB model:", path, err);
         }
       };
 
-      loadTexturesAndModel();
+      // Connect switch function to ref
+      switchModelFnRef.current = (emotion: EmotionType) => {
+        loadModelForEmotion(emotion);
+      };
 
-      // ── Mouse Tracking (desktop) ─────────────────────────────
+      // Initial load
+      loadModelForEmotion(emotionRef.current);
+
+      // Preload other models in background
+      Object.keys(EMOTION_CONFIGS).forEach((key) => {
+        if (key !== emotionRef.current) {
+          setTimeout(() => {
+            if (isMounted) loadModelForEmotion(key as EmotionType);
+          }, 400);
+        }
+      });
+
+      // ── Mouse / Touch Tracking ───────────────────────────────
+      const targetRotYRef = { current: 0 };
+      const targetRotXRef = { current: 0 };
       const isTouch = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
 
       const handleMouseMove = (e: MouseEvent) => {
@@ -236,64 +305,44 @@ const SpideyCanvas = forwardRef<SpideyCanvasRef, SpideyCanvasProps>(
         const rect = container.getBoundingClientRect();
         const nx = (e.clientX - rect.left) / rect.width - 0.5;
         const ny = (e.clientY - rect.top) / rect.height - 0.5;
-        targetRotYRef.current = nx * 0.45; // rotate Y horizontally
-        targetRotXRef.current = ny * 0.2;  // tilt X vertically
+        targetRotYRef.current = nx * 0.5; // rotate horizontally
+        targetRotXRef.current = ny * 0.15; // tilt vertically
       };
 
       if (enableMouseTracking && !isTouch) {
         window.addEventListener("mousemove", handleMouseMove, { passive: true });
       }
 
-      // ── Animation Loop ───────────────────────────────────────
+      // ── Animation Render Loop ────────────────────────────────
       const clock = new THREE.Clock();
       let currentRotY = 0;
       let currentRotX = 0;
-      let currentScale = 1.0;
       let rafId = 0;
 
       const animate = () => {
         rafId = requestAnimationFrame(animate);
-        const t = clock.getElapsedTime();
         const delta = clock.getDelta();
+        const t = clock.getElapsedTime();
         const config = emotionTargetRef.current;
 
-        // Smooth spin decay
-        if (Math.abs(spinAnimRef.current) > 0.01) {
-          spinAnimRef.current *= 0.92;
-        } else {
-          spinAnimRef.current = 0;
+        // Update active animation mixer
+        if (currentActiveMixer) {
+          currentActiveMixer.update(delta);
         }
 
         // Smooth mouse rotation lerp
         currentRotY += (targetRotYRef.current - currentRotY) * 0.08;
         currentRotX += (targetRotXRef.current - currentRotX) * 0.08;
 
-        if (modelGroupRef.current) {
-          // Floating bob + breath animation
-          const bob = Math.sin(t * config.bounceSpeed) * config.bounceHeight;
-          const sway = Math.sin(t * 0.8) * 0.015;
+        // Subtle organic sway
+        const sway = Math.sin(t * 1.2) * 0.015;
+        characterRoot.rotation.y = currentRotY + sway;
+        characterRoot.rotation.x = currentRotX;
 
-          modelGroupRef.current.position.y = -0.05 + bob;
-          modelGroupRef.current.rotation.y = currentRotY + spinAnimRef.current + sway;
-          modelGroupRef.current.rotation.x = currentRotX;
-          modelGroupRef.current.rotation.z = -sway * 0.5;
-
-          // Breathing scale effect
-          const breath = 1.0 + Math.sin(t * 1.8) * 0.012;
-          const targetTotalScale = config.scaleMultiplier * breath;
-          currentScale += (targetTotalScale - currentScale) * 0.06;
-          modelGroupRef.current.scale.setScalar(currentScale);
-        }
-
-        // Dynamic emissive and point light transitions
-        materialsRef.current.forEach((mat) => {
-          mat.emissive.lerp(new THREE.Color(config.emissiveColor), 0.05);
-          mat.emissiveIntensity += (config.emissiveIntensity - mat.emissiveIntensity) * 0.05;
-        });
-
-        if (glowLightRef.current) {
-          glowLightRef.current.color.lerp(new THREE.Color(config.glowColor), 0.05);
-          glowLightRef.current.intensity += (config.glowIntensity - glowLightRef.current.intensity) * 0.05;
+        // Dynamic reactor glow transition
+        if (glowLight) {
+          glowLight.color.lerp(new THREE.Color(config.glowColor), 0.08);
+          glowLight.intensity += (config.glowIntensity - glowLight.intensity) * 0.08;
         }
 
         renderer.render(scene, camera);
@@ -316,6 +365,7 @@ const SpideyCanvas = forwardRef<SpideyCanvasRef, SpideyCanvasProps>(
       resizeObserver.observe(container);
 
       return () => {
+        isMounted = false;
         cancelAnimationFrame(rafId);
         window.removeEventListener("mousemove", handleMouseMove);
         resizeObserver.disconnect();
@@ -330,7 +380,7 @@ const SpideyCanvas = forwardRef<SpideyCanvasRef, SpideyCanvasProps>(
       <div
         ref={containerRef}
         className={`w-full relative ${className}`}
-        style={{ height, minHeight: "350px" }}
+        style={{ height, minHeight: "380px" }}
         data-cursor="interactive"
       />
     );

@@ -22,10 +22,54 @@ const EMOTIONS: {
   description: string;
   animation: string;
 }[] = [
-  { id: "neutral",   label: "Neutral",   emoji: "😐", color: "#A0A0B0", description: "Calm and ready.",                animation: "Standing Idle" },
-  { id: "happy",     label: "Happy",     emoji: "😄", color: "#E31C25", description: "Your companion is happy!",        animation: "Waving Gesture" },
-  { id: "surprised", label: "Surprised", emoji: "😲", color: "#FF8800", description: "Whoa! Did not see that coming.",  animation: "Thinking" },
-  { id: "excited",   label: "Excited",   emoji: "🔥", color: "#FF2255", description: "Full energy mode activated!",     animation: "Hip Hop Dance" },
+  {
+    id: "neutral",
+    label: "Neutral",
+    emoji: "😐",
+    color: "#A0A0B0",
+    description: "Standing calm, alert and ready for your voice.",
+    animation: "Standing Idle",
+  },
+  {
+    id: "happy",
+    label: "Happy",
+    emoji: "😄",
+    color: "#E31C25",
+    description: "Excited and cheerful! Waves a friendly greeting to you.",
+    animation: "Waving Gesture",
+  },
+  {
+    id: "surprised",
+    label: "Surprised",
+    emoji: "😲",
+    color: "#FF8800",
+    description: "Deep in thought, analyzing the situation carefully.",
+    animation: "Thinking & Pondering",
+  },
+  {
+    id: "excited",
+    label: "Excited",
+    emoji: "🔥",
+    color: "#FF2255",
+    description: "High energy mode! Breaks out into full wave hip hop dance.",
+    animation: "Wave Hip Hop Dance",
+  },
+  {
+    id: "flip",
+    label: "Acrobat",
+    emoji: "🤸",
+    color: "#00E5FF",
+    description: "Spider agility in motion with a full front twist flip.",
+    animation: "Front Twist Flip",
+  },
+  {
+    id: "clap",
+    label: "Cheer",
+    emoji: "👏",
+    color: "#00E676",
+    description: "Celebrating your wins and cheering you on!",
+    animation: "Clapping Sequence",
+  },
 ];
 
 interface EmotionDemoProps {
@@ -33,7 +77,7 @@ interface EmotionDemoProps {
   showCanvas?: boolean;
 }
 
-export default function EmotionDemo({ canvasHeight = "500px", showCanvas = true }: EmotionDemoProps) {
+export default function EmotionDemo({ canvasHeight = "520px", showCanvas = true }: EmotionDemoProps) {
   const [activeEmotion, setActiveEmotion] = useState<EmotionType>("neutral");
   const canvasRef = useRef<SpideyCanvasRef>(null);
 
@@ -42,72 +86,75 @@ export default function EmotionDemo({ canvasHeight = "500px", showCanvas = true 
     canvasRef.current?.setEmotion(emotion);
   };
 
-  const current = EMOTIONS.find((e) => e.id === activeEmotion)!;
+  const current = EMOTIONS.find((e) => e.id === activeEmotion) || EMOTIONS[0];
 
   return (
     <div className="flex flex-col items-center gap-8">
       {showCanvas && (
-        <div className="relative w-full max-w-sm mx-auto" style={{ height: canvasHeight }}>
+        <div className="relative w-full max-w-sm sm:max-w-md mx-auto" style={{ height: canvasHeight }}>
           <SpideyCanvas
             ref={canvasRef}
             className="w-full h-full rounded-2xl"
             height={canvasHeight}
             enableMouseTracking={true}
+            initialEmotion="neutral"
           />
-          {/* Emotion glow overlay */}
+          {/* Emotion dynamic glow overlay */}
           <div
             className="absolute inset-0 rounded-2xl pointer-events-none transition-all duration-700"
             style={{
-              boxShadow: `inset 0 0 80px ${current.color}18`,
-              border: `1px solid ${current.color}28`,
-            }}
-          />
-          {/* Animation badge */}
-          <div
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all duration-500 whitespace-nowrap"
-            style={{
-              background: `${current.color}18`,
-              color: current.color,
+              boxShadow: `inset 0 0 90px ${current.color}22`,
               border: `1px solid ${current.color}35`,
             }}
+          />
+          {/* Real-time active animation indicator badge */}
+          <div
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase transition-all duration-500 whitespace-nowrap shadow-lg flex items-center gap-2"
+            style={{
+              background: `linear-gradient(135deg, ${current.color}25, #0a0a14cc)`,
+              color: current.color,
+              border: `1px solid ${current.color}50`,
+              backdropFilter: "blur(12px)",
+            }}
           >
-            ▶ {current.animation}
+            <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: current.color }} />
+            ▶ PLAYING: {current.animation}
           </div>
         </div>
       )}
 
       {/* Status text */}
       <div className="text-center">
-        <p className="text-xs text-[#A0A0B0] tracking-widest uppercase mb-1">Current Mood</p>
+        <p className="text-xs text-[#A0A0B0] tracking-widest uppercase mb-1">Active AI Emotion Reaction</p>
         <p
-          className="text-xl font-bold transition-colors duration-300"
+          className="text-2xl font-black transition-colors duration-300 tracking-tight"
           style={{ color: current.color }}
         >
           {current.emoji} {current.label.toUpperCase()}
         </p>
-        <p className="text-[#A0A0B0] text-sm mt-1">{current.description}</p>
+        <p className="text-[#A0A0B0] text-sm mt-1 max-w-md mx-auto">{current.description}</p>
       </div>
 
-      {/* Emotion buttons */}
-      <div className="flex flex-wrap justify-center gap-3">
+      {/* Emotion interactive action buttons */}
+      <div className="flex flex-wrap justify-center gap-3 max-w-lg">
         {EMOTIONS.map((emotion) => (
           <button
             key={emotion.id}
             onClick={() => handleEmotion(emotion.id)}
-            className={`px-5 py-2.5 rounded-full text-sm font-semibold tracking-wide transition-all duration-200 ${
+            className={`px-5 py-2.5 rounded-full text-sm font-semibold tracking-wide transition-all duration-200 cursor-pointer ${
               activeEmotion === emotion.id
-                ? "text-white scale-105"
+                ? "text-white scale-105 shadow-lg"
                 : "text-[#A0A0B0] hover:text-white hover:scale-105"
             }`}
             style={{
               background:
                 activeEmotion === emotion.id
                   ? `linear-gradient(135deg, ${emotion.color}, ${emotion.color}88)`
-                  : "rgba(255,255,255,0.05)",
-              border: `1px solid ${activeEmotion === emotion.id ? emotion.color : "rgba(255,255,255,0.1)"}`,
+                  : "rgba(255,255,255,0.06)",
+              border: `1px solid ${activeEmotion === emotion.id ? emotion.color : "rgba(255,255,255,0.12)"}`,
               boxShadow:
                 activeEmotion === emotion.id
-                  ? `0 0 20px ${emotion.color}44`
+                  ? `0 0 24px ${emotion.color}55`
                   : "none",
             }}
           >
