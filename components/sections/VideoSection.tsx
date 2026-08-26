@@ -9,13 +9,13 @@ export default function VideoSection() {
 
   return (
     <section className="section-padding max-w-7xl mx-auto px-6">
-      <div className="text-center mb-12">
-        <p className="text-xs text-[#E31C25] tracking-widest uppercase mb-3 font-semibold">
-          Demo
+      <div className="text-center mb-8 sm:mb-12">
+        <p className="text-xs text-[#E31C25] tracking-widest uppercase mb-2 sm:mb-3 font-semibold">
+          Official Trailer & Demo
         </p>
-        <h2 className="text-4xl sm:text-5xl font-black tracking-tight">
-          SEE IT IN{" "}
-          <span className="gradient-text-red">ACTION</span>
+        <h2 className="text-3xl sm:text-5xl font-black tracking-tight">
+          WATCH THE{" "}
+          <span className="gradient-text-red">TRAILER</span>
         </h2>
       </div>
 
@@ -23,7 +23,7 @@ export default function VideoSection() {
       <div className="relative max-w-3xl mx-auto rounded-2xl overflow-hidden glass border border-white/8 group cursor-pointer" onClick={() => setModalOpen(true)}>
         {/* Placeholder thumbnail */}
         <div className="aspect-video bg-gradient-to-br from-[#12121A] to-[#1a0a0a] flex flex-col items-center justify-center gap-4">
-          <div className="absolute inset-0 bg-[#E31C25]/3" />
+          <div className="absolute inset-0 bg-[#E31C25]/4" />
           {/* Spider web SVG pattern */}
           <svg className="absolute inset-0 w-full h-full opacity-5" viewBox="0 0 400 300">
             <line x1="200" y1="150" x2="200" y2="0" stroke="#E31C25" strokeWidth="1" />
@@ -36,11 +36,11 @@ export default function VideoSection() {
             <ellipse cx="200" cy="150" rx="120" ry="100" fill="none" stroke="#E31C25" strokeWidth="1" />
           </svg>
 
-          <div className="relative w-20 h-20 rounded-full bg-[#E31C25] flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-2xl shadow-red-500/30">
-            <Play size={28} className="text-white ml-1" fill="white" />
+          <div className="relative w-16 sm:w-20 h-16 sm:h-20 rounded-full bg-[#E31C25] flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-2xl shadow-red-500/35">
+            <Play size={26} className="text-white ml-1" fill="white" />
           </div>
-          <p className="relative text-[#A0A0B0] text-sm">
-            {VIDEO_URLS.demo ? "Click to watch the demo" : "Demo video coming soon"}
+          <p className="relative text-[#A0A0B0] text-xs sm:text-sm font-medium tracking-wide">
+            ▶ Click to watch the Official Spidey Companion Trailer & Demo
           </p>
         </div>
       </div>

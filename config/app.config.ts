@@ -26,7 +26,9 @@ export const SOCIAL_LINKS = {
 };
 
 export const VIDEO_URLS = {
-  demo: "https://www.youtube.com/embed/_o-jELP_fbw", // Day 5 emotions devlog
+  demo: "https://www.youtube.com/embed/SgeIAiXDJWc", // Official Spidey Companion Trailer & Demo
+  trailer: "https://youtu.be/SgeIAiXDJWc?si=31UUZg1kaQ_BkN3P",
+  day6: "https://youtu.be/qq3MloPkK3A?si=OhQkojWZAUHJb6c1",
 };
 
 export const APP_SCREENSHOTS: string[] = [
@@ -81,12 +83,12 @@ export const DEVELOPMENT_DAYS = [
   },
   {
     day: 6,
-    title: "Final App 🔥",
+    title: "Final App & Vision 🔥",
     description:
-      "Polished the full app, optimized performance, connected all systems, and shipped the final Spidey Companion experience.",
+      "Polished the full app, multimodal camera vision, hero wardrobe suits, affinity bond progression, and shipped the final Spidey Companion release.",
     status: "done" as const,
     thumbnail: "",
-    video: "",
+    video: "https://youtu.be/qq3MloPkK3A?si=OhQkojWZAUHJb6c1",
   },
 ];
 
