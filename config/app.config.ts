@@ -28,6 +28,7 @@ export const SOCIAL_LINKS = {
 export const VIDEO_URLS = {
   demo: "https://www.youtube.com/embed/SgeIAiXDJWc", // Official Spidey Companion Trailer & Demo
   trailer: "https://youtu.be/SgeIAiXDJWc?si=31UUZg1kaQ_BkN3P",
+  thumbnail: "/thumbnails/trailer.jpg",
   day6: "https://youtu.be/qq3MloPkK3A?si=OhQkojWZAUHJb6c1",
 };
 
@@ -42,7 +43,7 @@ export const DEVELOPMENT_DAYS = [
     description:
       "Set up the Flutter project structure, integrated core dependencies, and established the foundation for the AI companion app.",
     status: "done" as const,
-    thumbnail: "",
+    thumbnail: "/thumbnails/day1.jpg",
     video: "https://youtu.be/Ao_SgEFZzC4?si=xNuTtU3GXf5qK1JK",
   },
   {
@@ -69,7 +70,7 @@ export const DEVELOPMENT_DAYS = [
     description:
       "Connected Gemini and Groq AI backends. Implemented real-time voice input, speech recognition, and AI-generated responses.",
     status: "done" as const,
-    thumbnail: "",
+    thumbnail: "/thumbnails/day4.jpg",
     video: "https://youtu.be/ZmCLEaptJ94?si=r86wRURXzJByq3NQ",
   },
   {
@@ -87,7 +88,7 @@ export const DEVELOPMENT_DAYS = [
     description:
       "Polished the full app, multimodal camera vision, hero wardrobe suits, affinity bond progression, and shipped the final Spidey Companion release.",
     status: "done" as const,
-    thumbnail: "",
+    thumbnail: "/thumbnails/day6.jpg",
     video: "https://youtu.be/qq3MloPkK3A?si=OhQkojWZAUHJb6c1",
   },
 ];
