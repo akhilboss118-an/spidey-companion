@@ -84,7 +84,7 @@ export default function HeroSection() {
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3.5 rounded-full glass border border-white/15 text-white font-semibold tracking-wide hover:border-white/30 transition-all duration-200 active:scale-95 sm:hover:scale-105 text-sm sm:text-base"
             >
               <Download size={18} />
-              DOWNLOAD APK (v1.1.0)
+              DOWNLOAD APK (v1.2.0)
             </Link>
           </div>
 
